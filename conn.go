@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -9,8 +9,6 @@ import (
 	"net"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/ishidawataru/sctp"
 	"github.com/wmnsk/go-m3ua/messages"
@@ -85,6 +83,11 @@ func (c *Conn) Read(b []byte) (n int, err error) {
 
 // Write writes data to the connection.
 func (c *Conn) Write(b []byte) (n int, err error) {
+	return c.WriteToStream(b, c.sctpInfo.Stream)
+}
+
+// WriteToStream writes data to the connection and specific stream
+func (c *Conn) WriteToStream(b []byte, streamID uint16) (n int, err error) {
 	if c.state != StateAspActive {
 		return 0, ErrNotEstablished
 	}
@@ -99,7 +102,9 @@ func (c *Conn) Write(b []byte) (n int, err error) {
 		return 0, err
 	}
 
-	n, err = c.sctpConn.SCTPWrite(d, c.sctpInfo)
+	info := c.sctpInfo
+	info.Stream = streamID
+	n, err = c.sctpConn.SCTPWrite(d, info)
 	if err != nil {
 		return 0, err
 	}
@@ -113,12 +118,17 @@ func (c *Conn) WriteSignal(m3 messages.M3UA) (n int, err error) {
 	n = m3.MarshalLen()
 	buf := make([]byte, n)
 	if err := m3.MarshalTo(buf); err != nil {
-		return 0, fmt.Errorf("failed to create %T: %s", m3, err)
+		return 0, fmt.Errorf("failed to create %T: %w", m3, err)
 	}
 
-	nn, err := c.sctpConn.SCTPWrite(buf, c.sctpInfo)
+	sctpInfo := c.sctpInfo
+	if m3.MessageClass() != messages.MsgClassTransfer {
+		sctpInfo.Stream = 0
+	}
+
+	nn, err := c.sctpConn.SCTPWrite(buf, sctpInfo)
 	if err != nil {
-		return 0, errors.Wrap(err, "failed to write M3UA")
+		return 0, fmt.Errorf("failed to write M3UA: %w", err)
 	}
 
 	n += nn

@@ -1,13 +1,13 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
 package m3ua
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/wmnsk/go-m3ua/messages"
 	"github.com/wmnsk/go-m3ua/messages/params"
 )
@@ -143,25 +143,31 @@ func (e *ErrAspIDRequired) Error() string {
 
 func (c *Conn) handleErrors(e error) error {
 	var res messages.M3UA
-	switch err := e.(type) {
-	case *ErrInvalidVersion:
+	var errInvalidVersion *ErrInvalidVersion
+	if errors.As(e, &errInvalidVersion) {
 		res = messages.NewError(
 			params.NewErrorCode(params.ErrInvalidVersion),
 			nil, nil, nil, nil,
 		)
-	case *ErrUnsupportedClass:
+	}
+	//nolint:errorlint
+	if err, ok := e.(*ErrUnsupportedClass); ok {
 		res = messages.NewError(
 			params.NewErrorCode(params.ErrUnsupportedMessageClass),
 			nil, nil, nil,
 			params.NewDiagnosticInformation(err.first40Octets()),
 		)
-	case *ErrUnsupportedMessage:
+	}
+	//nolint:errorlint
+	if err, ok := e.(*ErrUnsupportedMessage); ok {
 		res = messages.NewError(
 			params.NewErrorCode(params.ErrUnsupportedMessageType),
 			nil, nil, nil,
 			params.NewDiagnosticInformation(err.first40Octets()),
 		)
-	case *ErrUnexpectedMessage:
+	}
+	var errUnexpectedMessage *ErrUnexpectedMessage
+	if errors.As(e, &errUnexpectedMessage) {
 		res = messages.NewError(
 			params.NewErrorCode(params.ErrUnexpectedMessage),
 			c.cfg.RoutingContexts,
@@ -171,22 +177,29 @@ func (c *Conn) handleErrors(e error) error {
 			),
 			nil,
 		)
-	case *ErrInvalidSCTPStreamID:
+	}
+	var errInvalidSCTPStreamID *ErrInvalidSCTPStreamID
+	if errors.As(e, &errInvalidSCTPStreamID) {
 		res = messages.NewError(
 			params.NewErrorCode(params.ErrInvalidStreamIdentifier),
 			nil, nil, nil, nil,
 		)
-	case *ErrAspIDRequired:
+	}
+	var errAspIDRequired *ErrAspIDRequired
+	if errors.As(e, &errAspIDRequired) {
 		res = messages.NewError(
 			params.NewErrorCode(params.ErrAspIdentifierRequired),
 			nil, nil, nil, nil,
 		)
-	default:
+	}
+
+	if res == nil {
 		return e
 	}
 
 	if _, err := c.WriteSignal(res); err != nil {
 		return err
 	}
+
 	return nil
 }

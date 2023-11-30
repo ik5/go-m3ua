@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pkg/errors"
 	"github.com/wmnsk/go-m3ua/messages/params"
 )
 
@@ -41,7 +40,7 @@ func NewAspDown(info *params.Param) *AspDown {
 func (a *AspDown) MarshalBinary() ([]byte, error) {
 	b := make([]byte, a.MarshalLen())
 	if err := a.MarshalTo(b); err != nil {
-		return nil, errors.Wrap(err, "failed to serialize AspDown")
+		return nil, err
 	}
 	return b, nil
 }
@@ -77,12 +76,12 @@ func (a *AspDown) UnmarshalBinary(b []byte) error {
 	var err error
 	a.Header, err = ParseHeader(b)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode Header")
+		return err
 	}
 
 	prs, err := params.ParseMultiParams(a.Header.Payload)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode Params")
+		return err
 	}
 	for _, pr := range prs {
 		switch pr.Tag {
@@ -138,7 +137,7 @@ func (a *AspDown) MessageClass() uint8 {
 
 // MessageClassName returns the name of message class.
 func (a *AspDown) MessageClassName() string {
-	return "ASPSM"
+	return MsgClassNameASPSM
 }
 
 // MessageTypeName returns the name of message type.

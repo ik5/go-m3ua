@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -6,12 +6,11 @@ package m3ua
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"sync"
 	"time"
-
-	"github.com/pkg/errors"
 
 	"github.com/ishidawataru/sctp"
 )
@@ -34,7 +33,7 @@ func Listen(net string, laddr *sctp.SCTPAddr, cfg *Config) (*Listener, error) {
 
 	l.sctpListener, err = sctp.ListenSCTP(n, laddr)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to listen SCTP")
+		return nil, fmt.Errorf("failed to listen SCTP: %w", err)
 	}
 	return l, nil
 }

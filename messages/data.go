@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/pkg/errors"
 	"github.com/wmnsk/go-m3ua/messages/params"
 )
 
@@ -46,7 +45,7 @@ func NewData(nwApr, rtCtx, pd, corrID *params.Param) *Data {
 func (d *Data) MarshalBinary() ([]byte, error) {
 	b := make([]byte, d.MarshalLen())
 	if err := d.MarshalTo(b); err != nil {
-		return nil, errors.Wrap(err, "failed to serialize Data")
+		return nil, err
 	}
 	return b, nil
 }
@@ -104,12 +103,12 @@ func (d *Data) UnmarshalBinary(b []byte) error {
 	var err error
 	d.Header, err = ParseHeader(b)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode Header")
+		return err
 	}
 
 	prs, err := params.ParseMultiParams(d.Header.Payload)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode Params")
+		return err
 	}
 	for _, pr := range prs {
 		switch pr.Tag {
@@ -192,7 +191,7 @@ func (d *Data) MessageClass() uint8 {
 
 // MessageClassName returns the name of message class.
 func (d *Data) MessageClassName() string {
-	return "Transfer"
+	return MsgClassNameTransfer
 }
 
 // MessageTypeName returns the name of message type.

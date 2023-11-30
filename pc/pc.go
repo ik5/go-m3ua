@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -6,10 +6,10 @@
 package pc
 
 import (
+	"errors"
+	"fmt"
 	"strconv"
 	"strings"
-
-	"github.com/pkg/errors"
 )
 
 // Variant is a variant of Signaling Point Code represented in string.
@@ -49,13 +49,14 @@ func (v Variant) slice() []uint32 {
 		return nil
 	}
 
-	var s []uint32
-	for _, digit := range strings.Split(v.String(), "-") {
+	ss := strings.Split(v.String(), "-")
+	s := make([]uint32, len(ss))
+	for i, digit := range ss {
 		d, err := strconv.Atoi(digit)
 		if err != nil {
 			return nil
 		}
-		s = append(s, uint32(d))
+		s[i] = uint32(d)
 	}
 	return s
 }
@@ -152,11 +153,11 @@ func convStrToRaw(f string, v Variant) (uint32, error) {
 
 	ds := strings.Split(f, "-")
 	if len(ds) == 0 {
-		return 0, errors.Errorf("PC: %s is invalid; digits should be splitted with \"-\"", f)
+		return 0, fmt.Errorf("PC: %s is invalid; digits should be splitted with \"-\"", f)
 	}
 	s := v.slice()
 	if len(ds) != len(s) {
-		return 0, errors.Errorf("PC: %s and Variant: %s doesn't match", f, v)
+		return 0, fmt.Errorf("PC: %s and Variant: %s doesn't match", f, v)
 	}
 
 	r := uint32(v.BitLength())
@@ -164,7 +165,7 @@ func convStrToRaw(f string, v Variant) (uint32, error) {
 	for i, d := range ds {
 		x, err := strconv.Atoi(d)
 		if err != nil {
-			return 0, errors.Wrap(err, "failed to convert PC")
+			return 0, err
 		}
 		r -= s[i]
 		n |= (uint32(x) << r)

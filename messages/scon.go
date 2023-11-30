@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -7,7 +7,6 @@ package messages
 import (
 	"fmt"
 
-	"github.com/pkg/errors"
 	"github.com/wmnsk/go-m3ua/messages/params"
 )
 
@@ -49,7 +48,7 @@ func NewSignallingCongestion(nwApr, rtCtx, apc, cdst, ind, info *params.Param) *
 func (s *SignallingCongestion) MarshalBinary() ([]byte, error) {
 	b := make([]byte, s.MarshalLen())
 	if err := s.MarshalTo(b); err != nil {
-		return nil, errors.Wrap(err, "failed to serialize SignallingCongestion")
+		return nil, err
 	}
 	return b, nil
 }
@@ -116,12 +115,12 @@ func (s *SignallingCongestion) UnmarshalBinary(b []byte) error {
 	var err error
 	s.Header, err = ParseHeader(b)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode Header")
+		return err
 	}
 
 	prs, err := params.ParseMultiParams(s.Header.Payload)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode Params")
+		return err
 	}
 	for _, pr := range prs {
 		switch pr.Tag {
@@ -222,7 +221,7 @@ func (s *SignallingCongestion) MessageClass() uint8 {
 
 // MessageClassName returns the name of message class.
 func (s *SignallingCongestion) MessageClassName() string {
-	return "Signalling Congestion"
+	return MsgClassNameSSNM
 }
 
 // MessageTypeName returns the name of message type.

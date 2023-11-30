@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -6,11 +6,11 @@ package m3ua
 
 import (
 	"context"
+	"errors"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/pkg/errors"
 	"github.com/wmnsk/go-m3ua/messages/params"
 
 	"github.com/ishidawataru/sctp"
@@ -93,7 +93,7 @@ func setupConn(ctx context.Context) (*Conn, *Conn, error) {
 	case err := <-errChan:
 		return nil, nil, err
 	case <-time.After(10 * time.Second):
-		return nil, nil, errors.New("timed out")
+		return nil, nil, errors.New("timeout")
 	}
 }
 

@@ -1,13 +1,13 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
 package messages
 
 import (
+	"fmt"
 	"log"
 
-	"github.com/pkg/errors"
 	"github.com/wmnsk/go-m3ua/messages/params"
 )
 
@@ -45,7 +45,7 @@ func NewDestinationRestricted(nwApr, rtCtx, apcs, info *params.Param) *Destinati
 func (d *DestinationRestricted) MarshalBinary() ([]byte, error) {
 	b := make([]byte, d.MarshalLen())
 	if err := d.MarshalTo(b); err != nil {
-		return nil, errors.Wrap(err, "failed to serialize DestinationRestricted")
+		return nil, err
 	}
 	return b, nil
 }
@@ -99,12 +99,12 @@ func (d *DestinationRestricted) UnmarshalBinary(b []byte) error {
 	var err error
 	d.Header, err = ParseHeader(b)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode DUNA")
+		return err
 	}
 
 	prs, err := params.ParseMultiParams(d.Header.Payload)
 	if err != nil {
-		return errors.Wrap(err, "failed to decode DUNA")
+		return err
 	}
 	for _, pr := range prs {
 		switch pr.Tag {
@@ -117,7 +117,7 @@ func (d *DestinationRestricted) UnmarshalBinary(b []byte) error {
 		case params.InfoString:
 			d.InfoString = pr
 		default:
-			return errors.Wrap(ErrInvalidParameter, "failed to decode DUNA")
+			return fmt.Errorf("failed to decode DRST: %w", ErrInvalidParameter)
 		}
 	}
 	return nil
@@ -176,12 +176,12 @@ func (d *DestinationRestricted) MessageClass() uint8 {
 
 // MessageClassName returns the name of message class.
 func (d *DestinationRestricted) MessageClassName() string {
-	return "SSNM"
+	return MsgClassNameSSNM
 }
 
 // MessageTypeName returns the name of message type.
 func (d *DestinationRestricted) MessageTypeName() string {
-	return "Destination Unavailable"
+	return "Destination Restricted"
 }
 
 // Serialize returns the byte sequence generated from a DestinationRestricted.

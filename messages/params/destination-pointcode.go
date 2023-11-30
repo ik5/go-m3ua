@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -15,5 +15,5 @@ func (p *Param) DestinationPointCode() uint32 {
 	if p.Tag != DestinationPointCode {
 		return 0
 	}
-	return uint32(p.decodeUint32ValData() & 0xffffff)
+	return p.decodeUint32ValData() & 0xffffff
 }

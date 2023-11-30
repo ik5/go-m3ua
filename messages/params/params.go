@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -6,10 +6,9 @@ package params
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
-
-	"github.com/pkg/errors"
 )
 
 // Common Parameter Tag definitions.

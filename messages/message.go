@@ -1,13 +1,12 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
 package messages
 
 import (
+	"errors"
 	"log"
-
-	"github.com/pkg/errors"
 )
 
 // Message Class definitions.
@@ -22,6 +21,16 @@ const (
 	_
 	_
 	MsgClassRKM
+)
+
+// Message Class Name definitions.
+const (
+	MsgClassNameManagement = "Management"
+	MsgClassNameTransfer   = "Transfer"
+	MsgClassNameSSNM       = "SSNM"
+	MsgClassNameASPSM      = "ASPSM"
+	MsgClassNameASPTM      = "ASPTM"
+	MsgClassNameRKM        = "RKM"
 )
 
 // Message Type definitions (Management).
@@ -162,7 +171,7 @@ func Parse(b []byte) (M3UA, error) {
 	}
 
 	if err := m.UnmarshalBinary(b); err != nil {
-		return nil, errors.Wrap(err, "failed to decode M3UA")
+		return nil, err
 	}
 	return m, nil
 }

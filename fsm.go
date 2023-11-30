@@ -1,4 +1,4 @@
-// Copyright 2018-2020 go-m3ua authors. All rights reserved.
+// Copyright 2018-2023 go-m3ua authors. All rights reserved.
 // Use of this source code is governed by a MIT-style license that can be
 // found in the LICENSE file.
 
@@ -6,9 +6,9 @@ package m3ua
 
 import (
 	"context"
+	"errors"
 	"sync"
 
-	"github.com/pkg/errors"
 	"github.com/wmnsk/go-m3ua/messages"
 	"github.com/wmnsk/go-m3ua/messages/params"
 )
@@ -174,6 +174,7 @@ func (c *Conn) handleSignals(ctx context.Context, m3 messages.M3UA) {
 	// Others: SSNM and RKM is not implemented.
 	default:
 		c.errChan <- NewErrUnsupportedMessage(m3)
+		c.stateChan <- c.state
 	}
 }
 
@@ -181,11 +182,13 @@ func (c *Conn) monitor(ctx context.Context) {
 	c.errChan = make(chan error)
 	c.dataChan = make(chan *params.ProtocolDataPayload, 0xffff)
 	c.beatAckChan = make(chan struct{})
+
 	c.beatAllow = sync.NewCond(&sync.Mutex{})
 	c.beatAllow.L.Lock()
 	go c.heartbeat(ctx)
 	defer c.beatAllow.Broadcast()
-	buf := make([]byte, 0xffff)
+
+	buf := make([]byte, 1500)
 	for {
 		select {
 		case <-ctx.Done():
@@ -200,32 +203,31 @@ func (c *Conn) monitor(ctx context.Context) {
 		case state := <-c.stateChan:
 			// Act properly based on current state.
 			if err := c.handleStateUpdate(state); err != nil {
-				if err == ErrSCTPNotAlive {
+				if errors.Is(err, ErrSCTPNotAlive) {
 					c.Close()
 					return
 				}
 			}
 
 			// Read from conn to see something coming from the peer.
-			n, info, err := c.sctpConn.SCTPRead(buf)
+			n, _, err := c.sctpConn.SCTPRead(buf)
 			if err != nil {
 				c.Close()
 				return
 			}
-			if info != nil {
-				if info.Stream != c.sctpInfo.Stream {
-					c.Close()
+
+			raw := make([]byte, n)
+			copy(raw, buf)
+			go func() {
+				// Parse the received packet as M3UA. Undecodable packets are ignored.
+				msg, err := messages.Parse(raw)
+				if err != nil {
+					logf("failed to parse M3UA message: %v, %x", err, raw)
 					return
 				}
-			}
 
-			// Parse the received packet as M3UA. Undecodable packets are ignored.
-			msg, err := messages.Parse(buf[:n])
-			if err != nil {
-				continue
-			}
-
-			go c.handleSignals(ctx, msg)
+				c.handleSignals(ctx, msg)
+			}()
 		}
 	}
 }
